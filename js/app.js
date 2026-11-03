@@ -1,8 +1,11 @@
 /* ==========================================================
-   APP — lógica da interface
+   APP — lógica do chat (index.html)
+   Depende de: config.js, api.js, common.js
    ========================================================== */
 
-/* ---------- Elementos ---------- */
+/* Sem sessão → volta ao login */
+if (!getSession()) location.replace("login.html");
+
 const el = {
   chat:       document.getElementById("chat"),
   messages:   document.getElementById("messages"),
@@ -12,81 +15,16 @@ const el = {
   file:       document.getElementById("file"),
   chip:       document.getElementById("chip"),
   chipName:   document.getElementById("chipName"),
-  chipRemove: document.getElementById("chipRemove"),
-  lang:       document.getElementById("lang"),
-  langBtn:    document.getElementById("langBtn"),
-  langFlag:   document.getElementById("langFlag"),
-  langTip:    document.getElementById("langTip"),
-  langMenu:   document.getElementById("langMenu")
-};
-
-/* ---------- Bandeiras (SVG inline, sem ficheiros extra) ---------- */
-const FLAGS = {
-  pt: '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#d00"/><rect width="12" height="20" fill="#060"/><circle cx="12" cy="10" r="3.6" fill="#ff0"/><circle cx="12" cy="10" r="2" fill="#fff" stroke="#d00" stroke-width=".8"/></svg>',
-  gb: '<svg viewBox="0 0 60 30" preserveAspectRatio="none"><rect width="60" height="30" fill="#012169"/><path d="M0 0L60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0L60 30M60 0L0 30" stroke="#c8102e" stroke-width="2"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/></svg>'
+  chipRemove: document.getElementById("chipRemove")
 };
 
 const history = [];
 let isBusy = false;
 let pendingImage = null;
-let lang = loadLang();
 
-function loadLang() {
-  let saved = null;
-  try { saved = localStorage.getItem("lang"); } catch (e) {}
-  return CONFIG.texts[saved] ? saved : CONFIG.defaultLang;
-}
-
-function t(key) {
-  return CONFIG.texts[lang][key];
-}
-
-function applyLanguage() {
-  const info = CONFIG.languages.find(l => l.code === lang);
-  document.documentElement.lang = info.htmlLang;
-  document.title = t("pageTitle");
-
-  document.querySelectorAll("[data-i18n]").forEach(n => { n.textContent = t(n.dataset.i18n); });
-  document.querySelectorAll("[data-i18n-html]").forEach(n => { n.innerHTML = t(n.dataset.i18nHtml); });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(n => { n.placeholder = t(n.dataset.i18nPlaceholder); });
-  document.querySelectorAll("[data-i18n-aria]").forEach(n => { n.setAttribute("aria-label", t(n.dataset.i18nAria)); });
-
-  // Botão da língua
-  el.langFlag.innerHTML = FLAGS[info.flag];
-  el.langTip.textContent = t("changeLang");
-  el.langBtn.setAttribute("aria-label", t("changeLang"));
-
-  // Menu com as outras línguas
-  el.langMenu.innerHTML = "";
-  CONFIG.languages.filter(l => l.code !== lang).forEach(l => {
-    const li = document.createElement("li");
-    li.setAttribute("role", "none");
-    li.innerHTML = '<button class="lang-item" type="button" role="menuitem"><span class="lang-flag">' + FLAGS[l.flag] + '</span><span></span></button>';
-    const btn = li.firstChild;
-    btn.lastChild.textContent = l.label;
-    btn.addEventListener("click", () => setLanguage(l.code));
-    el.langMenu.appendChild(li);
-  });
-
+/* Chamada por common.js sempre que a língua muda */
+function onLanguageChange() {
   if (pendingImage) setImage(pendingImage);   // atualiza o texto da imagem anexada
-}
-
-function setLanguage(code) {
-  lang = code;
-  try { localStorage.setItem("lang", code); } catch (e) {}
-  applyLanguage();
-  closeLangMenu();
-  el.input.focus();
-}
-
-function openLangMenu() {
-  el.langMenu.hidden = false;
-  el.langBtn.setAttribute("aria-expanded", "true");
-}
-
-function closeLangMenu() {
-  el.langMenu.hidden = true;
-  el.langBtn.setAttribute("aria-expanded", "false");
 }
 
 /* ---------- Mensagens ---------- */
@@ -182,14 +120,7 @@ el.attach.addEventListener("click", () => el.file.click());
 el.file.addEventListener("change", () => { if (el.file.files[0]) setImage(el.file.files[0]); });
 el.chipRemove.addEventListener("click", clearImage);
 
-el.langBtn.addEventListener("click", () => { el.langMenu.hidden ? openLangMenu() : closeLangMenu(); });
-document.addEventListener("click", event => { if (!el.lang.contains(event.target)) closeLangMenu(); });
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !el.langMenu.hidden) { closeLangMenu(); el.langBtn.focus(); }
-});
-
 /* ---------- Arranque ---------- */
-document.querySelectorAll("[data-logo]").forEach(img => { img.src = CONFIG.logos[img.dataset.logo]; });
 el.attach.hidden = !CONFIG.enableUpload;
-applyLanguage();
+initCommon();
 el.input.focus();

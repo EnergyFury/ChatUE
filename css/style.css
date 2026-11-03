@@ -2,6 +2,7 @@
    1. VARIÁVEIS (muda aqui para personalizar)
    ========================================================== */
 :root {
+  --scale: 0.9;                      /* zoom da interface: 1 = normal · 0.9 = -10% · 0.8 = -20% */
   --accent: #9b1b30;                 /* bordô principal */
   --accent-light: #b03a4f;           /* topo do gradiente */
   --accent-grad: linear-gradient(#b03a4f, #9a1b30);
@@ -14,6 +15,10 @@
 
   --font: "Ubuntu", system-ui, sans-serif;
   --card-width: 900px;
+
+  /* Marca de água */
+  --watermark-size: 190px;
+  --watermark-opacity: 0.08;
 }
 
 /* ==========================================================
@@ -21,7 +26,21 @@
    ========================================================== */
 * { box-sizing: border-box; margin: 0; }
 
-html, body { height: 100%; }
+html { height: 100%; }
+
+/* O zoom só vai no body (uma vez). A altura vem de --vh, calculada em
+   common.js em pixels (window.innerHeight / --scale), o que funciona igual
+   em todos os browsers. O calc(100vh / escala) é só um valor de reserva. */
+body {
+  zoom: var(--scale);
+  height: var(--vh, calc(100vh / var(--scale)));     /* chat: altura fixa = ecrã */
+}
+
+/* Login: pode crescer com o conteúdo (ex.: formulário de registo) */
+body[data-title="loginPageTitle"] {
+  height: auto;
+  min-height: var(--vh, calc(100vh / var(--scale)));
+}
 
 body {
   display: flex;
@@ -77,6 +96,7 @@ body {
   font-weight: 700;
   line-height: 1.25;
   text-align: center;
+  white-space: pre-line;
 }
 
 /* ==========================================================
@@ -121,26 +141,31 @@ body {
 /* Logo de fundo */
 .watermark {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+  top: 45%;
+  left: 50%;
+  width: var(--watermark-size);
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: var(--watermark-opacity);
   pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: opacity .3s;
 }
 
-.watermark img {
-  width: min(45%, 260px);
-  height: auto;
-  opacity: .06;
-}
+/* Depois de começar a conversa, fica mais discreta */
+.chat-started .watermark { opacity: .04; }
 
 /* ==========================================================
    6. CONVERSA
    ========================================================== */
 main {
   position: relative;
+  z-index: 1;                  /* por cima da marca de água */
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  background: transparent;
   scroll-behavior: smooth;
 }
 
@@ -218,6 +243,7 @@ main {
    ========================================================== */
 .composer-area {
   position: relative;
+  z-index: 1;
   flex: none;
   padding: 14px 24px 16px;
   background: #fff;
@@ -308,12 +334,13 @@ textarea:focus { border-color: var(--accent); }
    8. RODAPÉ DA PÁGINA
    ========================================================== */
 .site-footer {
+  margin-top: auto;
   flex: none;
   display: flex;
   justify-content: space-between;
   gap: 8px 24px;
   flex-wrap: wrap;
-  padding: 12px 16px;
+  padding: 6px 12px;
   font-size: .9rem;
   color: #444;
 }
@@ -323,12 +350,12 @@ textarea:focus { border-color: var(--accent); }
   .hero-logo { width: 52px; height: 52px; }
   main { padding: 16px; }
   .composer-area { padding: 12px 16px; }
+  .watermark { width: 140px; }
 }
+
 /* ==========================================================
    9. SELETOR DE LÍNGUA
    ========================================================== */
-.hero h1 { white-space: pre-line; }
-
 .lang {
   position: relative;
   margin-left: auto;
@@ -412,4 +439,229 @@ textarea:focus { border-color: var(--accent); }
 
 @media (max-width: 700px) {
   .lang-tip { display: none; }
+}
+/* ==========================================================
+   10. BOTÃO DO UTILIZADOR (ao lado do seletor de língua)
+   ========================================================== */
+.user {
+  position: relative;
+  flex: none;
+}
+
+.user-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 6px 0 4px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, .85);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+}
+.user-btn:hover,
+.user-btn[aria-expanded="true"] { background: rgba(255, 255, 255, .32); }
+.user-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.user-avatar { display: block; width: 100%; height: 100%; line-height: 0; }
+.user-avatar svg,
+.user-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.user-avatar svg { padding: 5px 4px 0; }
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 4px;
+  z-index: 20;
+  min-width: 250px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+  color: var(--ink);
+}
+.user-menu[hidden] { display: none; }
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #ececec;
+  overflow-wrap: anywhere;
+}
+.user-info span { font-size: .85rem; color: var(--muted); }
+
+.user-item {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.user-item:hover,
+.user-item:focus-visible { background: var(--panel); outline: 0; }
+
+/* ==========================================================
+   11. PÁGINA DE AUTENTICAÇÃO
+   ========================================================== */
+.auth-hero { padding-top: 32px; }
+.auth-hero .hero-logo { width: 112px; height: 112px; }
+.auth-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2.4rem); }
+
+.auth-stage {
+  flex: 1;
+  padding: 40px 20px 32px;
+}
+
+.auth-card {
+  max-width: 1070px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+  overflow: hidden;
+}
+
+.auth-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 24px 0;
+}
+
+.auth-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 52px;
+}
+.auth-col + .auth-col { border-left: 1px solid var(--line); }
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 388px;
+}
+.auth-form[hidden] { display: none; }
+
+.auth-input {
+  width: 100%;
+  height: 47px;
+  padding: 0 16px;
+  border: 1px solid #d3d3d3;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  outline: 0;
+  transition: border-color .15s, box-shadow .15s;
+}
+.auth-input::placeholder { color: #555; }
+.auth-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(155, 27, 48, .15); }
+
+.auth-btn {
+  height: 47px;
+  margin-top: 10px;
+  border: 1px solid #8c1a2c;
+  border-radius: 6px;
+  background: var(--accent-grad);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.auth-btn:hover { filter: brightness(1.06); }
+.auth-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth-btn:disabled { opacity: .6; cursor: wait; }
+
+.auth-link {
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  padding: 2px;
+}
+.auth-link:hover { text-decoration: underline; }
+.auth-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth-link.strong { color: var(--accent); font-weight: 700; margin-top: 4px; }
+
+.auth-error {
+  margin: -6px 0 0;
+  color: var(--error);
+  font-size: .9rem;
+  text-align: center;
+}
+.auth-error[hidden] { display: none; }
+.auth-side .auth-error { margin-top: 14px; }
+
+.gov-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  color: #1a5fb4;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.gov-btn:focus-visible { outline: 2px solid #1a5fb4; outline-offset: 2px; }
+
+.auth-gov-text { margin: 26px 0 30px; color: #444; }
+
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 390px;
+  color: var(--ink);
+}
+.auth-or::before,
+.auth-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 390px;
+  height: 47px;
+  margin-top: 22px;
+  border: 1px solid #b9b9b9;
+  border-radius: 6px;
+  background: #fff;
+  color: #444;
+  font: inherit;
+  cursor: pointer;
+}
+.google-btn:hover { background: var(--panel); }
+.google-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 800px) {
+  .auth-body { grid-template-columns: 1fr; padding: 16px 0; }
+  .auth-col { padding: 16px 20px; }
+  .auth-col + .auth-col { border-left: 0; border-top: 1px solid var(--line); margin-top: 8px; padding-top: 24px; }
+  .auth-hero { flex-direction: column; gap: 10px; }
+  .auth-hero .hero-logo { width: 80px; height: 80px; }
+  .auth-stage { padding: 20px 12px; }
+  .user-menu { min-width: 220px; }
 }

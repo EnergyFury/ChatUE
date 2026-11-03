@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assistente Virtual · Universidade de Évora</title>
+  <title>ChatUE · Universidade de Évora</title>
   <link rel="icon" href="assets/icon-logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script>try { if (!localStorage.getItem("chatue_session")) location.replace("login.html"); } catch (e) {}</script>
 </head>
-<body>
+<body data-title="pageTitle">
   <header class="topbar">
     <img class="topbar-logo" data-logo="topbar" alt="">
     <span class="topbar-title">SIIUE</span>
@@ -21,6 +22,13 @@
         <span class="lang-tip" id="langTip" role="tooltip"></span>
       </button>
       <ul class="lang-menu" id="langMenu" role="menu" hidden></ul>
+    </div>
+
+    <div class="user" id="user">
+      <button class="user-btn" id="userBtn" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="userMenuLabel">
+        <span class="user-avatar" id="userAvatar"></span>
+      </button>
+      <div class="user-menu" id="userMenu" role="menu" hidden></div>
     </div>
   </header>
 
@@ -34,6 +42,7 @@
       <div class="card-head" data-i18n="cardHead"></div>
 
       <div class="card-body">
+        <img class="watermark" data-logo="watermark" alt="" aria-hidden="true">
 
         <main id="chat">
           <div class="wrap" id="messages">
@@ -73,9 +82,10 @@
     <span data-i18n-html="footerTech"></span>
   </footer>
 
-  <!-- Ordem Correta: config → api → app -->
+  <!-- Ordem correta: config → api → common → app -->
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
